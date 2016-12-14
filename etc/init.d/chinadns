@@ -1,0 +1,44 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          chinadns
+# Required-Start:    $syslog $time $remote_fs
+# Required-Stop:     $syslog $time $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Description:       Start chinadns daemon
+### END INIT INFO
+
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+DAEMON=/config/shadowsocks/bin/chinadns
+PIDFILE=/var/run/chinadns.pid
+
+test -x $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
+case "$1" in
+  start)
+	log_daemon_msg "Starting chinadns" "chinadns"
+	start-stop-daemon -S -p $PIDFILE --oknodo -b -m $PIDFILE --startas /config/shadowsocks/bin/chinadns -- -p 5301 -s 61.139.2.69,127.0.0.1:5302 -c /config/shadowsocks/conf/chinadns_chnroute.txt
+	log_end_msg $?
+    ;;
+  stop)
+	log_daemon_msg "Stopping chinadns" "chinadns"
+	start-stop-daemon -K -p $PIDFILE --oknodo
+	log_end_msg $?
+    ;;
+  force-reload|restart)
+    $0 stop
+    $0 start
+    ;;
+  status)
+    status_of_proc -p $PIDFILE $DAEMON chinadns && exit 0 || exit $?
+    ;;
+  *)
+    echo "Usage: /etc/init.d/chinadns {start|stop|restart|force-reload|status}"
+    exit 1
+    ;;
+esac
+
+exit 0

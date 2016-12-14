@@ -1,0 +1,151 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          shadowsocks
+# Required-Start:    $syslog $time $remote_fs
+# Required-Stop:     $syslog $time $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Description:       Start shadowsocks daemon
+### END INIT INFO
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+DAEMON_SS_LOCAL=/config/shadowsocks/bin/ss-local
+DAEMON_SS_TUNNEL=/config/shadowsocks/bin/ss-tunnel
+DAEMON_SS_REDIR=/config/shadowsocks/bin/ss-redir
+
+#Change ISPDNS to your ISP dns or public dns, like 1.2.4.8, 114.114.114.114
+ISPDNS=61.139.2.69
+
+#Make sure your shadowsocks config file is correct!
+SSCONFIG=/config/shadowsocks/conf/shadowsocks.json
+
+#Check ChinaDNS readme page on github to know how to generate latest chnroute.txt
+IGNORE_LIST=/config/shadowsocks/conf/chinadns_chnroute.txt
+
+PIDFILE_SS_LOCAL=/var/run/ss-local.pid
+PIDFILE_SS_TUNNEL=/var/run/ss-tunnel.pid
+PIDFILE_SS_REDIR=/var/run/ss-redir.pid
+
+test -x $DAEMON_SS_LOCAL || exit 0
+test -x $DAEMON_SS_TUNNEL || exit 0
+test -x $DAEMON_SS_REDIR || exit 0
+
+ss_server_host=`grep -o "\"server\"\s*:\s*\"\?[-0-9a-zA-Z.]\+\"\?" $SSCONFIG|sed -n -e 's/"//gp'|awk -F':' '{print $2}'|sed -n -e 's/\s//gp'`
+if [ -z $ss_server_host ];then
+  echo "Error : ss_server_host is empty"
+  exit 0
+fi
+
+#test if domain or ip
+if echo $ss_server_host | grep -q '^[^0-9]'; then
+  #echo "ss_server_host : $ss_server_host"
+  ss_server_ip=`getent hosts $ss_server_host | awk '{ print $1 ; exit }'`
+else
+  ss_server_ip=$ss_server_host
+fi
+
+if [ -z $ss_server_ip ];then
+  echo "Error : ss_server_ip is empty"
+  exit 0
+fi
+#echo "ss_server_ip:$ss_server_ip"
+
+. /lib/lsb/init-functions
+
+gen_iplist() {
+	cat <<-EOF
+		0.0.0.0/8
+		10.0.0.0/8
+		100.64.0.0/10
+		127.0.0.0/8
+		169.254.0.0/16
+		172.16.0.0/12
+		192.168.0.0/16
+		224.0.0.0/4
+		240.0.0.0/4
+		255.255.255.255
+		110.232.176.0/22
+		$ss_server_ip
+		$(cat ${IGNORE_LIST:=/dev/null} 2>/dev/null)
+EOF
+}
+
+#192.168.2.0/24: white list ip range, this source ip range will not go through shadowsocks
+rules_add() {
+	ipset -! -R <<-EOF || return 1
+		create ss_ipset_bypass hash:net
+		$(gen_iplist | sed -e "s/^/add ss_ipset_bypass /")
+EOF
+	iptables -t nat -N SHADOWSOCKS && \
+	iptables -t nat -A SHADOWSOCKS -s 192.168.2.0/24 -j RETURN && \
+	iptables -t nat -A SHADOWSOCKS -m set --match-set ss_ipset_bypass dst -j RETURN && \
+	iptables -t nat -A SHADOWSOCKS -p tcp -j REDIRECT --to-ports 1081 && \
+	iptables -t nat -A PREROUTING -p tcp -j SHADOWSOCKS
+	return $?
+}
+
+rules_flush() {
+	iptables -t nat -F SHADOWSOCKS && \
+	iptables -t nat -D PREROUTING -p tcp -j SHADOWSOCKS && \
+	iptables -t nat -X SHADOWSOCKS && \
+	ipset -X ss_ipset_bypass
+	return $?
+}
+
+case "$1" in
+  start)
+	log_daemon_msg "Starting ss-local" "ss-local"
+	start-stop-daemon -S -p $PIDFILE_SS_LOCAL --oknodo --startas $DAEMON_SS_LOCAL -- -u -l 1080 -c $SSCONFIG -f $PIDFILE_SS_LOCAL
+	log_end_msg $?
+
+	log_daemon_msg "Starting ss-tunnel" "ss-tunnel"
+	start-stop-daemon -S -p $PIDFILE_SS_TUNNEL --oknodo --startas $DAEMON_SS_TUNNEL -- -u -c $SSCONFIG -l 5302 -L 8.8.8.8:53 -f $PIDFILE_SS_TUNNEL
+	log_end_msg $?
+
+	log_daemon_msg "Starting ss-redir" "ss-redir"
+	start-stop-daemon -S -p $PIDFILE_SS_REDIR --oknodo --startas $DAEMON_SS_REDIR -- -u -l 1081 -c $SSCONFIG -f $PIDFILE_SS_REDIR
+	log_end_msg $?
+
+	log_daemon_msg "Adding iptables rules, ss_server_ip" "$ss_server_ip"
+	rules_add
+	log_end_msg $?
+
+	log_daemon_msg "Change dns config"
+	sed -i s/server=$ISPDNS/server=127.0.0.1#5301/ /etc/dnsmasq.conf
+	/etc/init.d/dnsmasq restart
+	log_end_msg $?
+
+
+    ;;
+  stop)
+	log_daemon_msg "Stopping ss-local" "ss-local"
+	start-stop-daemon -K -p $PIDFILE_SS_LOCAL --oknodo
+	log_end_msg $?
+	log_daemon_msg "Stopping ss-tunnel" "ss-tunnel"
+	start-stop-daemon -K -p $PIDFILE_SS_TUNNEL --oknodo
+	log_end_msg $?
+	log_daemon_msg "Stopping ss-redir" "ss-redir"
+	start-stop-daemon -K -p $PIDFILE_SS_REDIR --oknodo
+	log_end_msg $?
+	log_daemon_msg "Deleteing iptables rules" "rules_flush"
+	rules_flush
+	log_end_msg $?
+	log_daemon_msg "Change dns config"
+	sed -i s/server=127.0.0.1#5353/server=$ISPDNS/ /etc/dnsmasq.conf
+	/etc/init.d/dnsmasq restart
+	log_end_msg $?
+    ;;
+  force-reload|restart)
+    $0 stop
+    $0 start
+    ;;
+  status)
+    status_of_proc -p $PIDFILE_SS_REDIR $DAEMON_SS_REDIR ss-redir && exit 0 || exit $?
+    ;;
+  *)
+    echo "Usage: /etc/init.d/shadowsocks {start|stop|restart|force-reload|status}"
+    exit 1
+    ;;
+esac
+
+exit 0
