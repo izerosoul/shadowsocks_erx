@@ -16,6 +16,7 @@ chmod +x /etc/init.d/chinadns
 1.国内外流量自动分流，通过ipset对国内IP进行白名单，不翻墙访问，只有国外流量会走shadowsocks通道翻墙
 2.只能对TCP流量翻墙，UDP只有DNS可以通过ss-tunnel翻墙
 3.1080端口可以作为socks5翻墙代理使用
+4.文件存放在/config目录是因为这个目录备份配置的时候会被一起备份，并且系统升级也不会删除
 
 启动后进程如下(假设ISP DNS设置为114.114.114.114):
 /config/shadowsocks/bin/ss-local -u -l 1080 -c /config/shadowsocks/conf/shadowsocks.json -f /var/run/ss-local.pid
