@@ -2,21 +2,16 @@
 shadowsocks for EdgeRouter X
 
 安装:
-1.修改/config/shadowsocks/conf/shadowsocks.json配置内容
-2.把除Readme外的所有文件复制到对应目录结构
-3./etc/dnsmasq.conf中添加一条自己ISP的DNS或者公共DNS
-server=114.114.114.114
-3.chmod添加可执行权限并启动
-chmod +x /etc/init.d/shadowsocks
-chmod +x /etc/init.d/chinadns
-/etc/init.d/shadowsocks start
-/etc/init.d/chinadns start
+1.下载shadowsocks_erx-master.zip并解压
+2.用winscp把解压所有文件copy到/tmp目录，然后执行: sudo bash install.sh
+3.根据提示输入shadowsocks配置信息，一般只需要输入服务器地址、端口、密码，其它选项可以直接回车使用默认选项。
 
 注意:
-1.国内外流量自动分流，通过ipset对国内IP进行白名单，不翻墙访问，只有国外流量会走shadowsocks通道翻墙
+1.国内外流量自动分流，通过ipset对国内IP进行白名单，国内IP不会翻墙访问，只有国外流量会走shadowsocks通道翻墙
 2.只能对TCP流量翻墙，UDP只有DNS可以通过ss-tunnel翻墙
 3.1080端口可以作为socks5翻墙代理使用
 4.文件存放在/config目录是因为这个目录备份配置的时候会被一起备份，并且系统升级也不会删除
+5.EdgeRouter X EdgeOS v1.8.5,v1.9.0测试通过
 
 启动后进程如下(假设ISP DNS设置为114.114.114.114):
 /config/shadowsocks/bin/ss-local -u -l 1080 -c /config/shadowsocks/conf/shadowsocks.json -f /var/run/ss-local.pid
@@ -28,3 +23,4 @@ DNS解析过程
 chinadns    必须配置至少一个国内DNS，一个国外DNS
 dnsmasq  ->    chinadns    (国外IP)->    ss-tunnel   -> ss-server -> dns-server:ok
 			   (国内IP)->    114.114.114.114:ok
+

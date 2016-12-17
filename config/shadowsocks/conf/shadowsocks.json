@@ -1,9 +1,0 @@
-{
-    "server": "srv.fuckgfw.com",
-    "server_port": 20586,
-    "local_address": "0.0.0.0",
-    "local_port": 8888,
-    "password": "123456789",
-    "timeout": 60,
-    "method": "rc4-md5"
-}

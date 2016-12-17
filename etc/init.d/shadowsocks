@@ -33,7 +33,7 @@ test -x $DAEMON_SS_LOCAL || exit 0
 test -x $DAEMON_SS_TUNNEL || exit 0
 test -x $DAEMON_SS_REDIR || exit 0
 
-ss_server_host=`grep -o "\"server\"\s*:\s*\"\?[-0-9a-zA-Z.]\+\"\?" $SSCONFIG|sed -n -e 's/"//gp'|awk -F':' '{print $2}'|sed -n -e 's/\s//gp'`
+ss_server_host=`grep -o "\"server\"\s*:\s*\"\?[-0-9a-zA-Z.]\+\"\?" $SSCONFIG|sed -e 's/"//g'|awk -F':' '{print $2}'|sed -e 's/\s//g'`
 if [ -z $ss_server_host ];then
   echo "Error : ss_server_host is empty"
   exit 0
