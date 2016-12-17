@@ -12,7 +12,8 @@ shadowsocks for EdgeRouter X
 2.只能对TCP流量翻墙，UDP只有DNS可以通过ss-tunnel翻墙
 3.1080端口可以作为socks5翻墙代理使用
 4.文件存放在/config目录是因为这个目录备份配置的时候会被一起备份，并且系统升级也不会删除
-5.EdgeRouter X EdgeOS v1.8.5,v1.9.0测试通过
+5.shadowsocks版本:v2.4.4, chinadns版本:v1.3.2，这两个版本目前运行稳定所以我没升级，后期考虑会升级
+6.EdgeRouter X EdgeOS v1.8.5,v1.9.0测试通过
 
 启动后进程如下(假设ISP DNS设置为114.114.114.114):
 /config/shadowsocks/bin/ss-local -u -l 1080 -c /config/shadowsocks/conf/shadowsocks.json -f /var/run/ss-local.pid
