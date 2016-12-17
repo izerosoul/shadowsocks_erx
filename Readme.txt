@@ -3,8 +3,9 @@ shadowsocks for EdgeRouter X
 
 安装:
 1.下载shadowsocks_erx-master.zip并解压
-2.用winscp把解压所有文件copy到/tmp目录，然后执行: sudo bash install.sh
-3.根据提示输入shadowsocks配置信息，一般只需要输入服务器地址、端口、密码，其它选项可以直接回车使用默认选项。
+2.用winscp把解压所有文件copy到/tmp目录
+3.连接路由CLI命令界面并登陆，然后执行: sudo bash install.sh
+4.根据提示输入shadowsocks配置信息，一般只需要输入服务器地址、端口、密码，其它选项可以直接回车使用默认选项。
 
 注意:
 1.国内外流量自动分流，通过ipset对国内IP进行白名单，国内IP不会翻墙访问，只有国外流量会走shadowsocks通道翻墙
