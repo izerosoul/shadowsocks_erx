@@ -14,7 +14,10 @@ DAEMON_SS_TUNNEL=/config/shadowsocks/bin/ss-tunnel
 DAEMON_SS_REDIR=/config/shadowsocks/bin/ss-redir
 
 #Change ISPDNS to your ISP dns or public dns, like 1.2.4.8, 114.114.114.114
-ISPDNS=61.139.2.69
+ISPDNS=114.114.114.114
+
+#This source ip range will not go through shadowsocks
+#BYPASS_RANGE=192.168.123.0/24
 
 #Make sure your shadowsocks config file is correct!
 SSCONFIG=/config/shadowsocks/conf/shadowsocks.json
@@ -77,7 +80,7 @@ rules_add() {
 		$(gen_iplist | sed -e "s/^/add ss_ipset_bypass /")
 EOF
 	iptables -t nat -N SHADOWSOCKS && \
-	iptables -t nat -A SHADOWSOCKS -s 192.168.2.0/24 -j RETURN && \
+	#iptables -t nat -A SHADOWSOCKS -s $BYPASS_RANGE -j RETURN && \
 	iptables -t nat -A SHADOWSOCKS -m set --match-set ss_ipset_bypass dst -j RETURN && \
 	iptables -t nat -A SHADOWSOCKS -p tcp -j REDIRECT --to-ports 1081 && \
 	iptables -t nat -A PREROUTING -p tcp -j SHADOWSOCKS
@@ -131,7 +134,7 @@ case "$1" in
 	rules_flush
 	log_end_msg $?
 	log_daemon_msg "Change dns config"
-	sed -i s/server=127.0.0.1#5353/server=$ISPDNS/ /etc/dnsmasq.conf
+	sed -i s/server=127.0.0.1#5301/server=$ISPDNS/ /etc/dnsmasq.conf
 	/etc/init.d/dnsmasq restart
 	log_end_msg $?
     ;;
