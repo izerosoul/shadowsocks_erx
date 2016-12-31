@@ -10,9 +10,12 @@
 
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 DAEMON_SS_LOCAL=/config/shadowsocks/bin/ss-local
-DAEMON_SS_TUNNEL=/config/shadowsocks/bin/ss-tunnel
 DAEMON_SS_REDIR=/config/shadowsocks/bin/ss-redir
+DAEMON_PDNSD=/config/shadowsocks/bin/pdnsd
+DAEMON_CHINADNS=/config/shadowsocks/bin/chinadns
 
+
+#/config/shadowsocks/bin/pdnsd -c /config/shadowsocks/conf/pdnsd.conf
 #Change ISPDNS to your ISP dns or public dns, like 1.2.4.8, 114.114.114.114
 ISPDNS=114.114.114.114
 
@@ -21,39 +24,53 @@ ISPDNS=114.114.114.114
 
 #Make sure your shadowsocks config file is correct!
 SSCONFIG=/config/shadowsocks/conf/shadowsocks.json
+PDNSD_CONFIG=/config/shadowsocks/conf/pdnsd.conf
+CHINADNS_CONFIG=/config/shadowsocks/conf/chinadns_chnroute.txt
 
 #Check ChinaDNS readme page on github to know how to generate latest chnroute.txt
 IGNORE_LIST=/config/shadowsocks/conf/chinadns_chnroute.txt
 
 PIDFILE_SS_LOCAL=/var/run/ss-local.pid
-PIDFILE_SS_TUNNEL=/var/run/ss-tunnel.pid
 PIDFILE_SS_REDIR=/var/run/ss-redir.pid
+PIDFILE_PDNSD=/var/run/pdnsd.pid
+PIDFILE_CHINADNS=/var/run/chinadns.pid
 
 test -x $DAEMON_SS_LOCAL || exit 0
-test -x $DAEMON_SS_TUNNEL || exit 0
 test -x $DAEMON_SS_REDIR || exit 0
-
-ss_server_host=`grep -o "\"server\"\s*:\s*\"\?[-0-9a-zA-Z.]\+\"\?" $SSCONFIG|sed -e 's/"//g'|awk -F':' '{print $2}'|sed -e 's/\s//g'`
-if [ -z $ss_server_host ];then
-  echo "Error : ss_server_host is empty"
-  exit 0
-fi
-
-#test if domain or ip
-if echo $ss_server_host | grep -q '^[^0-9]'; then
-  #echo "ss_server_host : $ss_server_host"
-  ss_server_ip=`getent hosts $ss_server_host | awk '{ print $1 ; exit }'`
-else
-  ss_server_ip=$ss_server_host
-fi
-
-if [ -z $ss_server_ip ];then
-  echo "Error : ss_server_ip is empty"
-  exit 0
-fi
-#echo "ss_server_ip:$ss_server_ip"
+test -x $DAEMON_PDNSD || exit 0
+test -x $DAEMON_CHINADNS || exit 0
 
 . /lib/lsb/init-functions
+
+#Test if network ready (pppoe)
+test_network() {
+	curl --retry 1 --silent --connect-timeout 2 -I www.baidu.com  > /dev/null
+	if [ "$?" != "0" ]; then
+		echo 'network not ready, wait for 5 seconds ...'
+		sleep 5
+	fi
+}
+
+get_server_ip() {
+	ss_server_host=`grep -o "\"server\"\s*:\s*\"\?[-0-9a-zA-Z.]\+\"\?" $SSCONFIG|sed -e 's/"//g'|awk -F':' '{print $2}'|sed -e 's/\s//g'`
+	if [ -z $ss_server_host ];then
+	  echo "Error : ss_server_host is empty"
+	  exit 0
+	fi
+
+	#test if domain or ip
+	if echo $ss_server_host | grep -q '^[^0-9]'; then
+	  #echo "ss_server_host : $ss_server_host"
+	  ss_server_ip=`getent hosts $ss_server_host | awk '{ print $1 ; exit }'`
+	else
+	  ss_server_ip=$ss_server_host
+	fi
+
+	if [ -z $ss_server_ip ];then
+	  echo "Error : ss_server_ip is empty"
+	  exit 0
+	fi
+}
 
 gen_iplist() {
 	cat <<-EOF
@@ -83,13 +100,15 @@ EOF
 	#iptables -t nat -A SHADOWSOCKS -s $BYPASS_RANGE -j RETURN && \
 	iptables -t nat -A SHADOWSOCKS -m set --match-set ss_ipset_bypass dst -j RETURN && \
 	iptables -t nat -A SHADOWSOCKS -p tcp -j REDIRECT --to-ports 1081 && \
-	iptables -t nat -A PREROUTING -p tcp -j SHADOWSOCKS
+	iptables -t nat -A PREROUTING -p tcp -j SHADOWSOCKS && \
+	iptables -t nat -A OUTPUT -p tcp -j SHADOWSOCKS
 	return $?
 }
 
 rules_flush() {
 	iptables -t nat -F SHADOWSOCKS && \
 	iptables -t nat -D PREROUTING -p tcp -j SHADOWSOCKS && \
+	iptables -t nat -D OUTPUT -p tcp -j SHADOWSOCKS && \
 	iptables -t nat -X SHADOWSOCKS && \
 	ipset -X ss_ipset_bypass
 	return $?
@@ -97,16 +116,23 @@ rules_flush() {
 
 case "$1" in
   start)
+	test_network
+	get_server_ip
+	#echo "ss_server_ip:$ss_server_ip"
 	log_daemon_msg "Starting ss-local" "ss-local"
 	start-stop-daemon -S -p $PIDFILE_SS_LOCAL --oknodo --startas $DAEMON_SS_LOCAL -- -u -l 1080 -c $SSCONFIG -f $PIDFILE_SS_LOCAL
 	log_end_msg $?
 
-	log_daemon_msg "Starting ss-tunnel" "ss-tunnel"
-	start-stop-daemon -S -p $PIDFILE_SS_TUNNEL --oknodo --startas $DAEMON_SS_TUNNEL -- -u -c $SSCONFIG -l 5302 -L 8.8.8.8:53 -f $PIDFILE_SS_TUNNEL
-	log_end_msg $?
-
 	log_daemon_msg "Starting ss-redir" "ss-redir"
 	start-stop-daemon -S -p $PIDFILE_SS_REDIR --oknodo --startas $DAEMON_SS_REDIR -- -u -l 1081 -c $SSCONFIG -f $PIDFILE_SS_REDIR
+	log_end_msg $?
+
+	log_daemon_msg "Starting pdnsd" "pdnsd"
+	start-stop-daemon -S -p $PIDFILE_PDNSD --oknodo --startas $DAEMON_PDNSD -- -c $PDNSD_CONFIG -d -p $PIDFILE_PDNSD
+	log_end_msg $?
+
+	log_daemon_msg "Starting chinadns" "chinadns"
+	start-stop-daemon -S -p $PIDFILE_CHINADNS --oknodo -b -m $PIDFILE_CHINADNS --startas $DAEMON_CHINADNS -- -p 5301 -s 61.139.2.69,127.0.0.1:5302 -c $CHINADNS_CONFIG
 	log_end_msg $?
 
 	log_daemon_msg "Adding iptables rules, ss_server_ip" "$ss_server_ip"
@@ -115,6 +141,8 @@ case "$1" in
 
 	log_daemon_msg "Change dns config"
 	sed -i s/server=$ISPDNS/server=127.0.0.1#5301/ /etc/dnsmasq.conf
+	[ 0 == `grep "^server" /etc/dnsmasq.conf|wc -l` ] && echo server=127.0.0.1#5301 >> /etc/dnsmasq.conf
+	[ 0 == `grep "^no-resolv" /etc/dnsmasq.conf|wc -l` ] && echo no-resolv >> /etc/dnsmasq.conf
 	/etc/init.d/dnsmasq restart
 	log_end_msg $?
 
@@ -124,17 +152,21 @@ case "$1" in
 	log_daemon_msg "Stopping ss-local" "ss-local"
 	start-stop-daemon -K -p $PIDFILE_SS_LOCAL --oknodo
 	log_end_msg $?
-	log_daemon_msg "Stopping ss-tunnel" "ss-tunnel"
-	start-stop-daemon -K -p $PIDFILE_SS_TUNNEL --oknodo
-	log_end_msg $?
 	log_daemon_msg "Stopping ss-redir" "ss-redir"
 	start-stop-daemon -K -p $PIDFILE_SS_REDIR --oknodo
+	log_end_msg $?
+	log_daemon_msg "Stopping pdnsd" "pdnsd"
+	start-stop-daemon -K -p $PIDFILE_PDNSD --oknodo
+	log_end_msg $?
+	log_daemon_msg "Stopping chinadns" "chinadns"
+	start-stop-daemon -K -p $PIDFILE_CHINADNS --oknodo
 	log_end_msg $?
 	log_daemon_msg "Deleteing iptables rules" "rules_flush"
 	rules_flush
 	log_end_msg $?
 	log_daemon_msg "Change dns config"
 	sed -i s/server=127.0.0.1#5301/server=$ISPDNS/ /etc/dnsmasq.conf
+	[ 0 == `grep "^server" /etc/dnsmasq.conf|wc -l` ] && echo server=$ISPDNS >> /etc/dnsmasq.conf
 	/etc/init.d/dnsmasq restart
 	log_end_msg $?
     ;;

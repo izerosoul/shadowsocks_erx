@@ -40,10 +40,9 @@ echo "write shadowsocks.json success"
 
 #copy files
 sed -i "s/ISPDNS=114.114.114.114/ISPDNS=$public_dns/" ./etc/init.d/shadowsocks
-cp -f ./etc/init.d/* /etc/init.d/
+cp -f ./etc/init.d/shadowsocks /etc/init.d/
 cp -rf ./config/shadowsocks /config
 chmod +x /etc/init.d/shadowsocks
-chmod +x /etc/init.d/chinadns
 chmod +x /config/shadowsocks/bin/*
 echo "copy file ok"
 
@@ -57,11 +56,9 @@ echo "change dnsmasq config ok"
 
 #add auto start
 sed -i "s/^exit 0//" /etc/rc.local
-[ 0 == `grep chinadns /etc/rc.local|wc -l` ] && echo /etc/init.d/chinadns start >> /etc/rc.local
 [ 0 == `grep shadowsocks /etc/rc.local|wc -l` ] && echo /etc/init.d/shadowsocks start >> /etc/rc.local
 echo exit 0 >> /etc/rc.local
 echo "add auto start ok"
 
 #start service
 /etc/init.d/shadowsocks start
-/etc/init.d/chinadns start
