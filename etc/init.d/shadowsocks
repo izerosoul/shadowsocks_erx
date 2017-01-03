@@ -106,10 +106,10 @@ EOF
 }
 
 rules_flush() {
-	iptables -t nat -F SHADOWSOCKS && \
-	iptables -t nat -D PREROUTING -p tcp -j SHADOWSOCKS && \
-	iptables -t nat -D OUTPUT -p tcp -j SHADOWSOCKS && \
-	iptables -t nat -X SHADOWSOCKS && \
+	iptables -t nat -F SHADOWSOCKS
+	iptables -t nat -D PREROUTING -p tcp -j SHADOWSOCKS
+	iptables -t nat -D OUTPUT -p tcp -j SHADOWSOCKS
+	iptables -t nat -X SHADOWSOCKS
 	ipset -X ss_ipset_bypass
 	return $?
 }
