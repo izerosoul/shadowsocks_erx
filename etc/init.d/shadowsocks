@@ -132,7 +132,7 @@ case "$1" in
 	log_end_msg $?
 
 	log_daemon_msg "Starting chinadns" "chinadns"
-	start-stop-daemon -S -p $PIDFILE_CHINADNS --oknodo -b -m $PIDFILE_CHINADNS --startas $DAEMON_CHINADNS -- -p 5301 -s 61.139.2.69,127.0.0.1:5302 -c $CHINADNS_CONFIG
+	start-stop-daemon -S -p $PIDFILE_CHINADNS --oknodo -b -m $PIDFILE_CHINADNS --startas $DAEMON_CHINADNS -- -p 5301 -s $ISPDNS,127.0.0.1:5302 -c $CHINADNS_CONFIG
 	log_end_msg $?
 
 	log_daemon_msg "Adding iptables rules, ss_server_ip" "$ss_server_ip"
