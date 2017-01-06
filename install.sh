@@ -61,4 +61,5 @@ echo exit 0 >> /etc/rc.local
 echo "add auto start ok"
 
 #start service
+[ `/etc/init.d/shadowsocks status|grep "is running"|wc -l` -gt 0 ] && /etc/init.d/shadowsocks stop
 /etc/init.d/shadowsocks start
