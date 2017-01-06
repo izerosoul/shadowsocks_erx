@@ -19,16 +19,15 @@ DAEMON_CHINADNS=/config/shadowsocks/bin/chinadns
 #Change ISPDNS to your ISP dns or public dns, like 1.2.4.8, 114.114.114.114
 ISPDNS=114.114.114.114
 
-#This source ip range will not go through shadowsocks
+#This source ip range will not go through shadowsocks, uncomment if you want to use it
 #BYPASS_RANGE=192.168.123.0/24
 
 #Make sure your shadowsocks config file is correct!
 SSCONFIG=/config/shadowsocks/conf/shadowsocks.json
 PDNSD_CONFIG=/config/shadowsocks/conf/pdnsd.conf
-CHINADNS_CONFIG=/config/shadowsocks/conf/chinadns_chnroute.txt
 
 #Check ChinaDNS readme page on github to know how to generate latest chnroute.txt
-IGNORE_LIST=/config/shadowsocks/conf/chinadns_chnroute.txt
+CHNROUTE=/config/shadowsocks/conf/chnroute.txt
 
 PIDFILE_SS_LOCAL=/var/run/ss-local.pid
 PIDFILE_SS_REDIR=/var/run/ss-redir.pid
@@ -86,22 +85,23 @@ gen_iplist() {
 		255.255.255.255
 		110.232.176.0/22
 		$ss_server_ip
-		$(cat ${IGNORE_LIST:=/dev/null} 2>/dev/null)
+		$(cat ${CHNROUTE:=/dev/null} 2>/dev/null)
 EOF
 }
 
-#192.168.2.0/24: white list ip range, this source ip range will not go through shadowsocks
 rules_add() {
 	ipset -! -R <<-EOF || return 1
 		create ss_ipset_bypass hash:net
 		$(gen_iplist | sed -e "s/^/add ss_ipset_bypass /")
 EOF
 	iptables -t nat -N SHADOWSOCKS && \
-	#iptables -t nat -A SHADOWSOCKS -s $BYPASS_RANGE -j RETURN && \
 	iptables -t nat -A SHADOWSOCKS -m set --match-set ss_ipset_bypass dst -j RETURN && \
 	iptables -t nat -A SHADOWSOCKS -p tcp -j REDIRECT --to-ports 1081 && \
 	iptables -t nat -A PREROUTING -p tcp -j SHADOWSOCKS && \
 	iptables -t nat -A OUTPUT -p tcp -j SHADOWSOCKS
+	if [ "$BYPASS_RANGE" ]; then
+		iptables -t nat -I SHADOWSOCKS -s $BYPASS_RANGE -j RETURN
+	fi
 	return $?
 }
 
@@ -132,7 +132,7 @@ case "$1" in
 	log_end_msg $?
 
 	log_daemon_msg "Starting chinadns" "chinadns"
-	start-stop-daemon -S -p $PIDFILE_CHINADNS --oknodo -b -m $PIDFILE_CHINADNS --startas $DAEMON_CHINADNS -- -p 5301 -s $ISPDNS,127.0.0.1:5302 -c $CHINADNS_CONFIG
+	start-stop-daemon -S -p $PIDFILE_CHINADNS --oknodo -b -m $PIDFILE_CHINADNS --startas $DAEMON_CHINADNS -- -p 5301 -s $ISPDNS,127.0.0.1:5302 -c $CHNROUTE
 	log_end_msg $?
 
 	log_daemon_msg "Adding iptables rules, ss_server_ip" "$ss_server_ip"
