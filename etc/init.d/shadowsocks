@@ -60,12 +60,12 @@ get_server_ip() {
 	#test if domain or ip
 	if echo $ss_server_host | grep -q '^[^0-9]'; then
 	  #echo "ss_server_host : $ss_server_host"
-	  ss_server_ip=`getent hosts $ss_server_host | awk '{ print $1 ; exit }'`
+	  ss_server_ip=`getent hosts $ss_server_host | awk '{ print $1 }'`
 	else
 	  ss_server_ip=$ss_server_host
 	fi
 
-	if [ -z $ss_server_ip ];then
+	if [ -z "$ss_server_ip" ];then
 	  echo "Error : ss_server_ip is empty"
 	  exit 0
 	fi
@@ -135,7 +135,7 @@ case "$1" in
 	start-stop-daemon -S -p $PIDFILE_CHINADNS --oknodo -b -m $PIDFILE_CHINADNS --startas $DAEMON_CHINADNS -- -p 5301 -s $ISPDNS,127.0.0.1:5302 -c $CHNROUTE
 	log_end_msg $?
 
-	log_daemon_msg "Adding iptables rules, ss_server_ip" "$ss_server_ip"
+	log_daemon_msg "Adding iptables rules, ss_server_ip" `for i in $ss_server_ip; do p=$p$i","; done; echo ${p%,}`
 	rules_add
 	log_end_msg $?
 
