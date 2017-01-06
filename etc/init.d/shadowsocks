@@ -175,7 +175,10 @@ case "$1" in
     $0 start
     ;;
   status)
-    status_of_proc -p $PIDFILE_SS_REDIR $DAEMON_SS_REDIR ss-redir && exit 0 || exit $?
+    status_of_proc -p $PIDFILE_SS_REDIR $DAEMON_SS_REDIR ss-redir
+    status_of_proc -p $PIDFILE_SS_LOCAL $DAEMON_SS_LOCAL ss-local
+    status_of_proc -p $PIDFILE_PDNSD $DAEMON_PDNSD pdnsd
+    status_of_proc -p $PIDFILE_CHINADNS $DAEMON_CHINADNS chinadns
     ;;
   *)
     echo "Usage: /etc/init.d/shadowsocks {start|stop|restart|force-reload|status}"
