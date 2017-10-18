@@ -15,7 +15,7 @@ sudo bash install.sh
 3.国外网站DNS经shadowsocks服务器中转使用TCP访问8.8.8.8，防止污染，国内域名使用国内DNS解析，不会影响CDN访问
 4.1080端口可以作为socks5翻墙代理使用
 5.文件存放在/config目录是因为这个目录备份配置的时候会被一起备份，并且系统升级也不会删除
-6.shadowsocks版本:v2.5.6, chinadns版本:v1.3.2(修改版)，pdnsd版本:v1.2.9
+6.shadowsocks-libev版本:v3.1.0, chinadns版本:v1.3.2(修改版)，pdnsd版本:v1.2.9
 7.EdgeRouter X EdgeOS v1.8.5,v1.9.0测试通过
 8.如果想暂停shadowsocks，运行sudo /etc/init.d/shadowsocks stop
 9.重新启动就运行sudo /etc/init.d/shadowsocks start
