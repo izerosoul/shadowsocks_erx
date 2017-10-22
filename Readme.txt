@@ -1,6 +1,12 @@
 
 shadowsocks for EdgeRouter X
 
+下载提示:
+最新版的ss-libev使用rc4-md5等加密协议会提示没有足够的熵来生成高质量的随机值，导致启动失败，因此如果无法使用请下载旧版:
+https://github.com/izerosoul/shadowsocks_erx/releases/download/v1.0/ss-erx-v1.0.tar.gz
+如果要使用最新版才支持的chacha20-ietf-poly1305等加密协议就可以下载最新版:
+https://github.com/izerosoul/shadowsocks_erx/releases/download/v1.1/ss-erx-v1.1.tar.gz
+
 安装:
 1.下载shadowsocks_erx-master.zip并解压
 2.用winscp把解压的所有文件copy到/tmp目录
