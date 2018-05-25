@@ -21,11 +21,11 @@ ISPDNS=114.114.114.114
 
 #This source ip range will not go through shadowsocks, uncomment if you want to use it
 #BYPASS_RANGE=192.168.123.0/24
-#BYPASS_RANGES=(192.168.100.1 192.168.100.2)
 
 #Make sure your shadowsocks config file is correct!
 SSCONFIG=/config/shadowsocks/conf/shadowsocks.json
 PDNSD_CONFIG=/config/shadowsocks/conf/pdnsd.conf
+source /config/shadowsocks/conf/BYPASS_RANGES.conf
 
 #Check ChinaDNS readme page on github to know how to generate latest chnroute.txt
 CHNROUTE=/config/shadowsocks/conf/chnroute.txt
