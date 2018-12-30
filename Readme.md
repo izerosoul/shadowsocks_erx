@@ -44,9 +44,10 @@ ss启动脚本/etc/init.d/shadowsocks里面有下面一行:
 去掉注释(删掉#号)重启服务就可以生效，然后192.168.123.0/24这整个网段都不会走ss通道了，同时也无法翻墙了，192.168.123.0/24也可以换成单独IP或者其它网段。
 
 ## DNS解析过程
-chinadns    必须配置至少一个国内DNS，一个国外DNS
-dnsmasq  ->    chinadns    (国外IP)->    pdnsd   -> ss-server -> dns-server:ok
-?			   (国内IP)->    114.114.114.114:ok
+chinadns    必须配置至少一个国内DNS，一个国外DNS 
+dnsmasq  ->    chinadns    (国外IP)->    pdnsd   -> ss-server -> dns-server:ok 
+
+?			   			(国内IP)->    114.114.114.114:ok 
 
 chinadns作者很久没有更新过了，但是有几个bug，会导致有些同时有国内国外CDN的域名解析出国外的IP，本方案使用的chinadns我修复了这个bug并优化了部分情况下的解析速度。
 ss翻墙方案目前最容易出问题的就是DNS防污染，最近的几次更新几乎都是针对DNS，到目前版本终于让我比较满意了。
