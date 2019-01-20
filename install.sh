@@ -9,8 +9,8 @@ read -p "server port (default: 22222):" ss_port
 [ -z "${ss_port}" ] && ss_port="22222"
 read -p "password (default: 12345678):" ss_password
 [ -z "${ss_password}" ] && ss_password="ss_password"
-read -p "method (default: rc4-md5):" ss_method
-[ -z "${ss_method}" ] && ss_method="rc4-md5"
+read -p "method (default: aes-256-cfb):" ss_method
+[ -z "${ss_method}" ] && ss_method="aes-256-cfb"
 echo
 echo "Please input your ISP dns or public dns you want to use"
 read -p "(default: 114.114.114.114):" public_dns
