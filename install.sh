@@ -42,7 +42,7 @@ echo "write shadowsocks.json success"
 # sed -i "s/ISPDNS=114.114.114.114/ISPDNS=$public_dns/" ./etc/init.d/shadowsocks
 sed -i "s/ISPDNS=114.114.114.114/ISPDNS=$public_dns/" ./config/shadowsocks/bin/shadowsocks.sh
 # cp -f ./etc/init.d/shadowsocks /etc/init.d/
-cp -f ./etc/systemd/system/shadowsocks.sh /etc/systemd/system/
+cp -f ./etc/systemd/system/shadowsocks.service /etc/systemd/system/
 cp -rf ./config/shadowsocks /config
 # chmod +x /etc/init.d/shadowsocks
 chmod +x /config/shadowsocks/bin/*

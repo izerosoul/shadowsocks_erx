@@ -4,9 +4,11 @@ Wants=network-online.target
 After=network.target
 
 [Service]
-Type=simple
+Type=forking
 ExecStart=/config/shadowsocks/bin/shadowsocks.sh start
 ExecStop=/config/shadowsocks/bin/shadowsocks.sh stop
+Restart=on-failure
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
