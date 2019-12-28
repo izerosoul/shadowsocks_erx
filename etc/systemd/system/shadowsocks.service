@@ -1,0 +1,12 @@
+[Unit]
+Description=Start Shadowsocks Client
+Wants=network-online.target
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/config/shadowsocks/bin/shadowsocks.sh start
+ExecStop=/config/shadowsocks/bin/shadowsocks.sh stop
+
+[Install]
+WantedBy=multi-user.target
