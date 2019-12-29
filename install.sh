@@ -54,7 +54,7 @@ dnscfg=/etc/dnsmasq.conf
 echo "change dnsmasq config ok"
 
 #start service
-[ `systemctl status shadowsocks|grep "is running"|wc -l` -gt 0 ] && systemctl stop shadowsocks
+[ `systemctl status shadowsocks|grep "Active: active (running)"|wc -l` -gt 0 ] && systemctl stop shadowsocks
 systemctl start shadowsocks
 
 #add auto start
