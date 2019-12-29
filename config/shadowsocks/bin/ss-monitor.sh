@@ -16,7 +16,7 @@ else
 	curl --retry 1 --silent --connect-timeout 3 -I www.baidu.com  > /dev/null
 	if [ "$?" == "0" ]; then
 		echo '['$LOGTIME'] Problem decteted, restarting shadowsocks.'  >> $LOGFILE
-		/etc/init.d/shadowsocks restart
+		systemctl restart shadowsocks
 	else
 		echo '['$LOGTIME'] Network Problem. Do nothing.'  >> $LOGFILE
 	fi

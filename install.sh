@@ -39,12 +39,9 @@ EOF
 echo "write shadowsocks.json success"
 
 #copy files
-# sed -i "s/ISPDNS=114.114.114.114/ISPDNS=$public_dns/" ./etc/init.d/shadowsocks
 sed -i "s/ISPDNS=114.114.114.114/ISPDNS=$public_dns/" ./config/shadowsocks/bin/shadowsocks.sh
-# cp -f ./etc/init.d/shadowsocks /etc/init.d/
 cp -f ./etc/systemd/system/shadowsocks.service /etc/systemd/system/
 cp -rf ./config/shadowsocks /config
-# chmod +x /etc/init.d/shadowsocks
 chmod +x /config/shadowsocks/bin/*
 echo "copy file ok"
 
@@ -57,13 +54,8 @@ dnscfg=/etc/dnsmasq.conf
 echo "change dnsmasq config ok"
 
 #start service
-# [ `/etc/init.d/shadowsocks status|grep "is running"|wc -l` -gt 0 ] && /etc/init.d/shadowsocks stop
-# /etc/init.d/shadowsocks start
+[ `systemctl status shadowsocks|grep "is running"|wc -l` -gt 0 ] && systemctl stop shadowsocks
 systemctl start shadowsocks
 
 #add auto start
-#sed -i "s/^exit 0//" /etc/rc.local
-#[ 0 == `grep shadowsocks /etc/rc.local|wc -l` ] && echo /etc/init.d/shadowsocks start >> /etc/rc.local
-#echo exit 0 >> /etc/rc.local
-#echo "add auto start ok"
 systemctl enable shadowsocks
