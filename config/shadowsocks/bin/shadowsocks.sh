@@ -14,7 +14,6 @@ DAEMON_SS_REDIR=/config/shadowsocks/bin/ss-redir
 DAEMON_PDNSD=/config/shadowsocks/bin/pdnsd
 DAEMON_CHINADNS=/config/shadowsocks/bin/chinadns
 
-
 #/config/shadowsocks/bin/pdnsd -c /config/shadowsocks/conf/pdnsd.conf
 #Change ISPDNS to your ISP dns or public dns, like 1.2.4.8, 114.114.114.114
 ISPDNS=114.114.114.114
@@ -150,7 +149,7 @@ case "$1" in
 	sed -i s/server=$ISPDNS/server=127.0.0.1#5301/ /etc/dnsmasq.conf
 	[ 0 == `grep "^server" /etc/dnsmasq.conf|wc -l` ] && echo server=127.0.0.1#5301 >> /etc/dnsmasq.conf
 	[ 0 == `grep "^no-resolv" /etc/dnsmasq.conf|wc -l` ] && echo no-resolv >> /etc/dnsmasq.conf
-	/etc/init.d/dnsmasq restart
+	systemctl restart dnsmasq
 	log_end_msg $?
 
 
@@ -174,7 +173,7 @@ case "$1" in
 	log_daemon_msg "Change dns config"
 	sed -i s/server=127.0.0.1#5301/server=$ISPDNS/ /etc/dnsmasq.conf
 	[ 0 == `grep "^server" /etc/dnsmasq.conf|wc -l` ] && echo server=$ISPDNS >> /etc/dnsmasq.conf
-	/etc/init.d/dnsmasq restart
+	systemctl restart dnsmasq
 	log_end_msg $?
     ;;
   force-reload|restart)
@@ -188,7 +187,8 @@ case "$1" in
     status_of_proc -p $PIDFILE_CHINADNS $DAEMON_CHINADNS chinadns
     ;;
   *)
-    echo "Usage: /etc/init.d/shadowsocks {start|stop|restart|force-reload|status}"
+
+	echo "Usage: systemctl {start|stop|status}"
     exit 1
     ;;
 esac
